@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV-Template-01</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CÀI ĐẶT CƠ BẢN --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #e9e9e9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* --- THANH CÔNG CỤ (CONTROL PANEL) --- */
+        .control-panel {
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-edit { background-color: #00aeef; color: white; }
+        .btn-update { background-color: #27ae60; color: white; display: none; }
+        .btn-cancel { background-color: #e74c3c; color: white; display: none; }
+        .btn-download { background-color: #2e2550; color: white; }
+
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        /* --- CHẾ ĐỘ CHỈNH SỬA --- */
+        .editable-active {
+            border: 1px dashed #00aeef;
+            background-color: rgba(0, 174, 239, 0.1);
+            min-width: 10px;
+            cursor: text;
+            outline: none;
+        }
+
+        /* --- KHUNG CV (A4) --- */
+        #cv-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* --- MÀU SẮC CHỦ ĐẠO --- */
+        :root {
+            --dark-purple: #2e2550; 
+            --bright-cyan: #00aeef; 
+            --bg-gray: #f2f2f2;     
+            --text-dark: #333;
+        }
+
+        /* --- CÁC HÌNH KHỐI TRANG TRÍ (SHAPES) --- */
+        /* Header Tím */
+        .shape-header-purple {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 160px;
+            background-color: var(--dark-purple);
+            clip-path: polygon(0 0, 100% 0, 100% 70%, 35% 100%, 0 85%);
+            z-index: 2;
+        }
+        
+        /* Header Xanh (Nằm dưới tím) */
+        .shape-header-blue {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 170px;
+            background-color: var(--bright-cyan);
+            clip-path: polygon(0 0, 100% 0, 100% 80%, 35% 100%, 0 95%);
+            z-index: 1;
+        }
+
+        /* Footer Tím */
+        .shape-footer-purple {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background-color: var(--dark-purple);
+            clip-path: polygon(0 100%, 100% 100%, 100% 20%, 30% 0, 0 30%);
+            z-index: 2;
+        }
+        
+        /* Footer Xanh */
+        .shape-footer-blue {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 115px;
+            background-color: var(--bright-cyan);
+            clip-path: polygon(0 100%, 100% 100%, 100% 10%, 30% 0, 0 20%);
+            z-index: 1;
+        }
+
+        /* --- CỘT TRÁI (SIDEBAR) --- */
+        .sidebar {
+            width: 35%;
+            background-color: var(--bg-gray);
+            padding: 180px 20px 120px 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Avatar */
+        .avatar-container {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid white;
+            overflow: hidden;
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            background-color: #ddd;
+        }
+        
+        .avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Styles cho Overlay Camera khi Edit */
+        .edit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 35px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none; /* Click xuyên qua */
+        }
+
+        /* Khi ở chế độ edit (có class img-editable-mode) */
+        .img-editable-mode {
+            cursor: pointer;
+        }
+        .img-editable-mode:hover .edit-overlay {
+            opacity: 1;
+        }
+
+        /* Tiêu đề cột trái */
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark-purple);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* Contact Info */
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #444;
+            line-height: 1.4;
+        }
+
+        .contact-icon {
+            width: 30px;
+            height: 30px;
+            background-color: var(--bright-cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 10px;
+            font-size: 12px;
+            flex-shrink: 0; 
+        }
+
+        /* List Skills */
+        .skill-list { list-style: none; }
+        
+        .skill-list li {
+            margin-bottom: 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .skill-list li i {
+            color: var(--dark-purple);
+            margin-right: 8px;
+            margin-top: 3px;
+            font-size: 12px;
+        }
+
+        /* Rating Stars */
+        .rating-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        .stars {
+            color: var(--dark-purple);
+            font-size: 12px;
+        }
+
+        /* --- CỘT PHẢI (MAIN CONTENT) --- */
+        .main-content {
+            width: 65%;
+            padding: 30px 30px 120px 30px;
+            position: relative;
+            z-index: 3;
+        }
+
+        /* Tên & Chức danh */
+        .header-info {
+            text-align: right;
+            color: white;
+            margin-bottom: 80px;
+            padding-right: 20px;
+        }
+
+        .name {
+            font-size: 32px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .job-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Các mục chính */
+        .main-section { margin-bottom: 30px; }
+
+        .section-header {
+            background-color: var(--dark-purple);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 16px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0px var(--bright-cyan);
+        }
+
+        .section-content { padding-left: 10px; }
+
+        /* Mục tiêu */
+        .objective-item {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-dark);
+            text-align: justify;
+        }
+        
+        .objective-item i {
+            color: var(--dark-purple);
+            margin-right: 10px;
+            margin-top: 4px;
+        }
+
+        /* Timeline */
+        .timeline-block {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .timeline-container {
+            border-left: 2px solid var(--dark-purple);
+            margin-left: 10px;
+            padding-left: 25px;
+            padding-bottom: 10px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            background-color: var(--dark-purple);
+            border-radius: 50%;
+        }
+
+        .time-range {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--dark-purple);
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .company-school {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .role-title {
+            font-style: italic;
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .description {
+            font-size: 13px;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        /* Input file ẩn */
+        #imgUpload { display: none; }
+
+        /* --- CẤU HÌNH IN ẤN --- */
+        @media print {
+            .control-panel { display: none !important; }
+            .edit-overlay { display: none !important; }
+            body { background: none; padding: 0; }
+            #cv-container { box-shadow: none; width: 100%; margin: 0; }
+        }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+    <input type="file" id="imgUpload" accept="image/*" onchange="previewImage(this)">
+
+    <div class="control-panel">
+        <button class="btn btn-edit" id="btnEdit" onclick="startEdit()">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+        </button>
+        <button class="btn btn-update" id="btnUpdate" onclick="saveEdit()">
+            <i class="fa-solid fa-check"></i> Update
+        </button>
+        <button class="btn btn-cancel" id="btnCancel" onclick="cancelEdit()">
+            <i class="fa-solid fa-xmark"></i> Cancel
+        </button>
+        <button class="btn btn-download" id="btnDownload" onclick="downloadImage()">
+            <i class="fa-solid fa-download"></i> Tải Ảnh (.PNG)
+        </button>
+    </div>
+
+    <div id="cv-container">
+        
+        <div class="shape-header-blue"></div>
+        <div class="shape-header-purple"></div>
+        <div class="shape-footer-blue"></div>
+        <div class="shape-footer-purple"></div>
+
+        <div class="sidebar">
+            <div class="avatar-container" id="avatarContainer" onclick="triggerImgUpload()">
+                <img id="avatar-img" src="https://ui-avatars.com/api/?name=Dang+Van+Nghia&background=333&color=fff&size=500" alt="Avatar">
+                <div class="edit-overlay">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+            </div>
+
+            <div class="sidebar-title">LIÊN HỆ</div>
+            <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
+                <div class="editable">nguyenvanan@gmail.com</div>
+            </div>
+            <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-phone"></i></div>
+                <div class="editable">09750xxxxx</div>
+            </div>
+            <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="editable">Đà Nẵng, Việt Nam</div>
+            </div>
+            <div class="contact-item">
+                <div class="contact-icon"><i class="fa-solid fa-cake-candles"></i></div>
+                <div class="editable">01/01/1985</div>
+            </div>
+
+            <div class="sidebar-title">KỸ NĂNG</div>
+            <ul class="skill-list">
+                <li><i class="fa-solid fa-circle-check"></i> <span class="editable">Quản trị mạng CCNA</span></li>
+                <li><i class="fa-solid fa-circle-check"></i> <span class="editable">An ninh mạng CEHv12</span></li>
+                <li><i class="fa-solid fa-circle-check"></i> <span class="editable">Tin học văn phòng MOS</span></li>
+                <li><i class="fa-solid fa-circle-check"></i> <span class="editable">Kỹ năng sư phạm</span></li>
+                <li><i class="fa-solid fa-circle-check"></i> <span class="editable">Huấn luyện thi đấu</span></li>
+                <li><i class="fa-solid fa-circle-check"></i> <span class="editable">Lập kế hoạch đào tạo</span></li>
+            </ul>
+
+            <div class="sidebar-title">TIN HỌC</div>
+            <div class="rating-item">
+                <span>MS Word</span>
+                <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+            <div class="rating-item">
+                <span>MS Excel</span>
+                <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+            <div class="rating-item">
+                <span>PowerPoint</span>
+                <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+            </div>
+
+            <div class="sidebar-title">NGOẠI NGỮ</div>
+            <div class="rating-item">
+                <span>Tiếng Anh</span>
+                <div class="stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header-info">
+                <h1 class="name editable">NGUYỄN VĂN AN</h1>
+                <div class="job-title editable">THẠC SĨ - KHOA HỌC MÁY TÍNH</div>
+            </div>
+
+            <div class="main-section">
+                <div class="section-header">MỤC TIÊU NGHỀ NGHIỆP</div>
+                <div class="section-content">
+                    <div class="objective-item">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span class="editable">Mong muốn áp dụng kiến thức chuyên sâu về KHMT và An ninh mạng để đào tạo nguồn nhân lực chất lượng cao.</span>
+                    </div>
+                    <div class="objective-item">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span class="editable">Tiếp tục dẫn dắt các đội tuyển Tin học đạt thành tích cao tại các đấu trường quốc tế (MOSWC).</span>
+                    </div>
+                    <div class="objective-item">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span class="editable">Phát triển các chương trình đào tạo thực tế, bám sát nhu cầu doanh nghiệp.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-section">
+                <div class="section-header">HỌC VẤN</div>
+                <div class="timeline-container">
+                    <div class="timeline-item">
+                        <span class="time-range editable">ĐÃ TỐT NGHIỆP</span>
+                        <div class="company-school editable">ĐẠI HỌC KHOA HỌC & CÔNG NGHỆ</div>
+                        <div class="role-title editable">Thạc sĩ Khoa Học Máy Tính</div>
+                        <div class="description editable">Nghiên cứu chuyên sâu về hệ thống máy tính, thuật toán và bảo mật dữ liệu.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-section">
+                <div class="section-header">KINH NGHIỆM LÀM VIỆC</div>
+                <div class="timeline-container">
+                    <div class="timeline-item">
+                        <span class="time-range editable">15 NĂM KINH NGHIỆM</span>
+                        <div class="company-school editable">GIẢNG VIÊN CÔNG NGHỆ THÔNG TIN</div>
+                        <div class="description editable">
+                            - Giảng dạy các môn học chuyên ngành Khoa học máy tính.<br>
+                            - Xây dựng chương trình và giáo trình đào tạo.<br>
+                            - Hướng dẫn đồ án tốt nghiệp và nghiên cứu khoa học cho sinh viên.
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <span class="time-range editable">HẰNG NĂM</span>
+                        <div class="company-school editable">HUẤN LUYỆN VIÊN ĐỘI TUYỂN MOS</div>
+                        <div class="description editable">
+                            - Ôn luyện đội tuyển tham gia cuộc thi Vô địch Tin học văn phòng thế giới (MOSWC).<br>
+                            - Đào tạo kỹ năng thực chiến, tối ưu hóa thời gian làm bài.<br>
+                            - Đạt nhiều giải thưởng cao trong các kỳ thi khu vực và quốc gia.
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <div class="main-section">
+                <div class="section-header">NGƯỜI THAM CHIẾU</div>
+                <div class="section-content">
+                   <div class="description editable">
+                       Cung cấp theo yêu cầu.
+                   </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const btnEdit = document.getElementById('btnEdit');
+        const btnUpdate = document.getElementById('btnUpdate');
+        const btnCancel = document.getElementById('btnCancel');
+        const btnDownload = document.getElementById('btnDownload');
+        const editableElements = document.querySelectorAll('.editable');
+        
+        // Các phần tử xử lý ảnh
+        const imgUpload = document.getElementById('imgUpload');
+        const avatarImg = document.getElementById('avatar-img');
+        const avatarContainer = document.getElementById('avatarContainer');
+
+        // Biến trạng thái
+        let isEditingMode = false;
+        let originalImageSrc = ""; 
+
+        function startEdit() {
+            isEditingMode = true;
+
+            btnEdit.style.display = 'none';
+            btnDownload.style.display = 'none';
+            btnUpdate.style.display = 'flex';
+            btnCancel.style.display = 'flex';
+
+            editableElements.forEach(el => {
+                el.contentEditable = "true";
+                el.classList.add('editable-active');
+                el.setAttribute('data-original', el.innerHTML); // Lưu nội dung gốc
+            });
+
+            // Xử lý Ảnh
+            originalImageSrc = avatarImg.src; // Lưu ảnh gốc
+            avatarContainer.classList.add('img-editable-mode'); // Bật hover
+        }
+
+        function saveEdit() {
+            isEditingMode = false;
+
+            editableElements.forEach(el => {
+                el.contentEditable = "false";
+                el.classList.remove('editable-active');
+            });
+
+            avatarContainer.classList.remove('img-editable-mode');
+            resetButtons();
+        }
+
+        function cancelEdit() {
+            isEditingMode = false;
+
+            // Hoàn tác Text
+            editableElements.forEach(el => {
+                el.contentEditable = "false";
+                el.classList.remove('editable-active');
+                if (el.hasAttribute('data-original')) {
+                    el.innerHTML = el.getAttribute('data-original');
+                }
+            });
+
+            // Hoàn tác Ảnh
+            avatarImg.src = originalImageSrc;
+            imgUpload.value = ""; // Reset input
+            avatarContainer.classList.remove('img-editable-mode');
+
+            resetButtons();
+        }
+
+        function resetButtons() {
+            btnEdit.style.display = 'flex';
+            btnDownload.style.display = 'flex';
+            btnUpdate.style.display = 'none';
+            btnCancel.style.display = 'none';
+        }
+
+        // --- HÀM XỬ LÝ ẢNH ---
+        function triggerImgUpload() {
+            if (isEditingMode) {
+                imgUpload.click();
+            }
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarImg.src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function downloadImage() {
+            var element = document.getElementById("cv-container");
+            
+            // Tạm thời tắt box-shadow để tránh lỗi render viền đen lạ ở một số trình duyệt
+            var originalShadow = element.style.boxShadow;
+            element.style.boxShadow = "none";
+
+            html2canvas(element, {
+                scale: 2, 
+                useCORS: true,
+                scrollX: 0,
+                scrollY: -window.scrollY
+            }).then(canvas => {
+                var link = document.createElement('a');
+                link.download = 'CV_DangVanNghia_Purple.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                
+                // Khôi phục shadow
+                element.style.boxShadow = originalShadow;
+            });
+        }
+    </script>
+</body>
+</html>
